@@ -4,7 +4,7 @@ import { TransactionStatus } from "genlayer-js/types";
 
 export const MODEL_RISK_RADAR_CONTRACT_ADDRESS =
   (process.env.NEXT_PUBLIC_MODEL_RISK_RADAR_CONTRACT_ADDRESS ??
-    "0x0000000000000000000000000000000000000000") as `0x${string}`;
+    "0xC188E9a3551a25AC78B3659245438C6dfd0e41c1") as `0x${string}`;
 
 export type WalletAddress = `0x${string}`;
 
