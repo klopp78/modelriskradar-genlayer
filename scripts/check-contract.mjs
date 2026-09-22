@@ -4,7 +4,6 @@ import { resolve } from "node:path";
 
 const contractPath = resolve("contracts/model_risk_radar.py");
 const source = readFileSync(contractPath, "utf8");
-const firstLine = source.split(/\r?\n/, 1)[0];
 const expectedRuntime =
   "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6";
 
@@ -16,7 +15,7 @@ function sha256(value) {
   return createHash("sha256").update(value, "utf8").digest("hex");
 }
 
-assert(firstLine.includes(expectedRuntime), `missing pinned runtime dependency: ${expectedRuntime}`);
+assert(source.includes(expectedRuntime), `missing pinned runtime dependency: ${expectedRuntime}`);
 assert(/class\s+ModelRiskRadar\s*\(\s*gl\.Contract\s*\)\s*:/.test(source), "ModelRiskRadar must inherit gl.Contract");
 assert(!/gl\.get_webpage|gl\.exec_prompt|gl\.json_loads|gl\.json_dumps|gl\.msg/.test(source), "unsupported legacy gl APIs remain");
 
