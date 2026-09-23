@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { assessSignal, MODEL_RISK_RADAR_CONTRACT_ADDRESS, type WalletAddress } from "@/lib/genlayer";
+import { formatUiError } from "@/lib/ui-error";
 
 declare global {
   interface Window {
@@ -30,17 +31,23 @@ export default function AssessPage() {
     try {
       setBusy(true);
       setRecord("");
+      if (!/^mrs_[a-f0-9]{20}$/.test(signalId.trim())) {
+        throw new Error("Enter a valid mrs_* signal ID before assessment.");
+      }
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address.trim())) {
+        throw new Error("Enter a valid Studio contract address before assessment.");
+      }
       setMessage("Waiting for validators to recompute evidence commitments and return a model risk verdict...");
       const account = wallet ?? (await connectWallet());
       const result = await assessSignal({
         walletAddress: account,
-        signalId,
-        contractAddress: address as `0x${string}`,
+        signalId: signalId.trim(),
+        contractAddress: address.trim() as `0x${string}`,
       });
       setRecord(typeof result.verdict === "string" ? result.verdict : JSON.stringify(result.verdict, null, 2));
       setMessage(`Verdict accepted: ${result.verdictId}`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
+      setMessage(formatUiError(error));
     } finally {
       setBusy(false);
     }
@@ -58,7 +65,7 @@ export default function AssessPage() {
         <Field id="signal" label="Signal ID" value={signalId} setValue={setSignalId} />
         <Field id="address" label="Studio contract address" value={address} setValue={setAddress} />
         <div className="flex flex-wrap gap-3">
-          <button className="action-button" onClick={() => connectWallet().then(() => setMessage("Wallet connected.")).catch((error) => setMessage(error.message))}>Connect wallet</button>
+          <button className="action-button" onClick={() => connectWallet().then(() => setMessage("Wallet connected.")).catch((error) => setMessage(formatUiError(error)))}>Connect wallet</button>
           <button className="action-button primary" disabled={busy} onClick={submit}>{busy ? "Awaiting consensus" : "Assess signal"}</button>
         </div>
         <p className="text-sm text-[#596452]">{message}</p>

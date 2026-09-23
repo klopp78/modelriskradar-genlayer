@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { readSignal, readVerdict, MODEL_RISK_RADAR_CONTRACT_ADDRESS, type WalletAddress } from "@/lib/genlayer";
+import { formatUiError } from "@/lib/ui-error";
 
 declare global {
   interface Window {
@@ -30,12 +31,20 @@ export default function RecordsPage() {
   async function read(kind: "signal" | "verdict") {
     try {
       setBusy(true);
-      const options = { walletAddress: wallet ?? undefined, contractAddress: address as `0x${string}` };
-      const value = kind === "signal" ? await readSignal(signalId, options) : await readVerdict(verdictId, options);
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address.trim())) {
+        throw new Error("Enter a valid Studio contract address before reading records.");
+      }
+      const targetId = kind === "signal" ? signalId.trim() : verdictId.trim();
+      const pattern = kind === "signal" ? /^mrs_[a-f0-9]{20}$/ : /^mrv_[a-f0-9]{20}$/;
+      if (!pattern.test(targetId)) {
+        throw new Error(`Enter a valid ${kind === "signal" ? "mrs_* signal" : "mrv_* verdict"} ID.`);
+      }
+      const options = { walletAddress: wallet ?? undefined, contractAddress: address.trim() as `0x${string}` };
+      const value = kind === "signal" ? await readSignal(targetId, options) : await readVerdict(targetId, options);
       setRecord(typeof value === "string" ? value : JSON.stringify(value, null, 2));
       setMessage(`${kind} record loaded.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
+      setMessage(formatUiError(error));
     } finally {
       setBusy(false);
     }
@@ -54,7 +63,7 @@ export default function RecordsPage() {
         <Field id="verdict" label="Verdict ID" value={verdictId} setValue={setVerdictId} />
         <Field id="address" label="Studio contract address" value={address} setValue={setAddress} />
         <div className="flex flex-wrap gap-3">
-          <button className="action-button" onClick={() => connectWallet().then(() => setMessage("Wallet connected.")).catch((error) => setMessage(error.message))}>Connect wallet</button>
+          <button className="action-button" onClick={() => connectWallet().then(() => setMessage("Wallet connected.")).catch((error) => setMessage(formatUiError(error)))}>Connect wallet</button>
           <button className="action-button" disabled={busy || !signalId} onClick={() => read("signal")}>Read signal</button>
           <button className="action-button primary" disabled={busy || !verdictId} onClick={() => read("verdict")}>Read verdict</button>
         </div>

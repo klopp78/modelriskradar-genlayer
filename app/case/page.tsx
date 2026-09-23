@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { registerSignal, MODEL_RISK_RADAR_CONTRACT_ADDRESS, type WalletAddress } from "@/lib/genlayer";
+import { formatUiError } from "@/lib/ui-error";
 
 declare global {
   interface Window {
@@ -16,6 +17,7 @@ export default function CasePage() {
   const [primaryEvidenceUrl, setPrimaryEvidenceUrl] = useState("https://github.com/klopp78/modelriskradar-genlayer/blob/main/examples/primary-evidence.md");
   const [archiveUrl, setArchiveUrl] = useState("https://raw.githubusercontent.com/klopp78/modelriskradar-genlayer/main/examples/model-risk-archive.md");
   const [contextUrl, setContextUrl] = useState("https://github.com/klopp78/modelriskradar-genlayer/blob/main/examples/context-note.md");
+  const [reviewRun, setReviewRun] = useState(() => `review-${Date.now().toString(36)}`);
   const [address, setAddress] = useState(MODEL_RISK_RADAR_CONTRACT_ADDRESS);
   const [wallet, setWallet] = useState<WalletAddress | null>(null);
   const [message, setMessage] = useState("Connect a browser wallet to register a source-bound risk signal.");
@@ -34,21 +36,28 @@ export default function CasePage() {
     try {
       setBusy(true);
       setRecord("");
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address.trim())) {
+        throw new Error("Enter a valid Studio contract address before registering.");
+      }
+      if (![subjectUrl, primaryEvidenceUrl, archiveUrl, contextUrl].every((url) => /^https?:\/\//i.test(url.trim()))) {
+        throw new Error("All source fields must be absolute HTTP or HTTPS URLs.");
+      }
       setMessage("Waiting for GenLayer validators to bind subject and evidence snapshots...");
       const account = wallet ?? (await connectWallet());
+      const claimWithRun = `${claim.trim()}\n\nReview run: ${reviewRun.trim() || Date.now().toString(36)}`;
       const result = await registerSignal({
         walletAddress: account,
-        subjectUrl,
-        claim,
-        primaryEvidenceUrl,
-        archiveUrl,
-        contextUrl,
-        contractAddress: address as `0x${string}`,
+        subjectUrl: subjectUrl.trim(),
+        claim: claimWithRun,
+        primaryEvidenceUrl: primaryEvidenceUrl.trim(),
+        archiveUrl: archiveUrl.trim(),
+        contextUrl: contextUrl.trim(),
+        contractAddress: address.trim() as `0x${string}`,
       });
       setRecord(typeof result.signalRecord === "string" ? result.signalRecord : JSON.stringify(result.signalRecord, null, 2));
       setMessage(`Risk signal accepted: ${result.signalId}`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
+      setMessage(formatUiError(error));
     } finally {
       setBusy(false);
     }
@@ -68,9 +77,10 @@ export default function CasePage() {
         <Field id="primary" label="Primary evidence URL" value={primaryEvidenceUrl} setValue={setPrimaryEvidenceUrl} />
         <Field id="archive" label="Archive or source snapshot URL" value={archiveUrl} setValue={setArchiveUrl} />
         <Field id="context" label="Independent context URL" value={contextUrl} setValue={setContextUrl} />
+        <Field id="review-run" label="Review run reference" value={reviewRun} setValue={setReviewRun} />
         <Field id="address" label="Studio contract address" value={address} setValue={setAddress} />
         <div className="flex flex-wrap gap-3">
-          <button className="action-button" onClick={() => connectWallet().then(() => setMessage("Wallet connected.")).catch((error) => setMessage(error.message))}>Connect wallet</button>
+          <button className="action-button" onClick={() => connectWallet().then(() => setMessage("Wallet connected.")).catch((error) => setMessage(formatUiError(error)))}>Connect wallet</button>
           <button className="action-button primary" disabled={busy} onClick={submit}>{busy ? "Awaiting consensus" : "Register signal"}</button>
         </div>
         <p className="text-sm text-[#596452]">{message}</p>
