@@ -36,6 +36,17 @@ export function createModelRiskRadarClient(walletAddress?: WalletAddress) {
   });
 }
 
+function createModelRiskRadarWriteClient(walletAddress: WalletAddress) {
+  const provider = typeof window !== "undefined" ? window.ethereum : undefined;
+  if (!provider) throw new Error("No browser wallet detected.");
+
+  return createClient({
+    chain: studionet,
+    account: walletAddress,
+    provider,
+  });
+}
+
 function ModelRiskRadarAddress(contractAddress?: `0x${string}`) {
   return contractAddress ?? MODEL_RISK_RADAR_CONTRACT_ADDRESS;
 }
@@ -71,8 +82,7 @@ export async function registerSignal({
   contextUrl,
   contractAddress,
 }: SignalInput) {
-  const client = createModelRiskRadarClient(walletAddress);
-  await client.connect("studionet");
+  const client = createModelRiskRadarWriteClient(walletAddress);
   const address = ModelRiskRadarAddress(contractAddress);
   const hash = await client.writeContract({
     address,
@@ -92,8 +102,7 @@ export async function registerSignal({
 }
 
 export async function assessSignal({ walletAddress, signalId, contractAddress }: AssessSignalInput) {
-  const client = createModelRiskRadarClient(walletAddress);
-  await client.connect("studionet");
+  const client = createModelRiskRadarWriteClient(walletAddress);
   const address = ModelRiskRadarAddress(contractAddress);
   const hash = await client.writeContract({
     address,
