@@ -97,8 +97,10 @@ export async function registerSignal({
     fullTransaction: true,
   });
   const signalId = idFromReceipt(receipt, /mrs_[a-f0-9]{20}/, "signal");
-  const signalRecord = await readSignal(signalId, { walletAddress, contractAddress: address });
-  return { hash, receipt, signalId, signalRecord };
+  const { data: signalRecord, warning: readbackWarning } = await tryReadback(() =>
+    readSignal(signalId, { walletAddress, contractAddress: address }),
+  );
+  return { hash, receipt, signalId, signalRecord, readbackWarning };
 }
 
 export async function assessSignal({ walletAddress, signalId, contractAddress }: AssessSignalInput) {
@@ -117,8 +119,31 @@ export async function assessSignal({ walletAddress, signalId, contractAddress }:
     fullTransaction: true,
   });
   const verdictId = idFromReceipt(receipt, /mrv_[a-f0-9]{20}/, "verdict");
-  const verdict = await readVerdict(verdictId, { walletAddress, contractAddress: address });
-  return { hash, receipt, verdictId, verdict };
+  const { data: verdict, warning: readbackWarning } = await tryReadback(() =>
+    readVerdict(verdictId, { walletAddress, contractAddress: address }),
+  );
+  return { hash, receipt, verdictId, verdict, readbackWarning };
+}
+
+async function tryReadback<T>(read: () => Promise<T>): Promise<{ data: T | null; warning?: string }> {
+  try {
+    return { data: await read() };
+  } catch (error) {
+    return {
+      data: null,
+      warning: `The transaction was accepted, but the immediate readback was not available yet: ${compactError(error)}`,
+    };
+  }
+}
+
+function compactError(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return "unknown readback error";
+  }
 }
 
 function idFromReceipt(receipt: unknown, pattern: RegExp, label: string): string {

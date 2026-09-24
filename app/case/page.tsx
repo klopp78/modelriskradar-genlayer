@@ -54,8 +54,14 @@ export default function CasePage() {
         contextUrl: contextUrl.trim(),
         contractAddress: address.trim() as `0x${string}`,
       });
-      setRecord(typeof result.signalRecord === "string" ? result.signalRecord : JSON.stringify(result.signalRecord, null, 2));
-      setMessage(`Risk signal accepted: ${result.signalId}`);
+      setRecord(JSON.stringify({
+        signalId: result.signalId,
+        transactionHash: result.hash,
+        readbackWarning: result.readbackWarning,
+        signalRecord: result.signalRecord,
+        receipt: result.receipt,
+      }, null, 2));
+      setMessage(result.readbackWarning ? `Risk signal accepted: ${result.signalId}. Readback is still catching up.` : `Risk signal accepted: ${result.signalId}`);
     } catch (error) {
       setMessage(formatUiError(error));
     } finally {

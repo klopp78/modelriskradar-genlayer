@@ -33,6 +33,9 @@ function friendlyMessage(message: string): string {
   if (message.includes("wallet_getSnaps")) {
     return "This app does not require MetaMask Snaps. Your wallet rejected a Snap capability check; refresh the page, connect with a standard EIP-1193 wallet, and switch to Studionet before submitting.";
   }
+  if (message.includes("Missing or invalid parameters") || message.includes("execution failed")) {
+    return "The chain accepted the write, but the immediate SDK readback returned a parameter/execution error. Check the result panel for the transaction hash, then use the Records page after a short delay.";
+  }
   if (message.includes("signal_already_registered")) {
     return "This exact signal was already registered. Change the review run reference or claim text, then register again.";
   }

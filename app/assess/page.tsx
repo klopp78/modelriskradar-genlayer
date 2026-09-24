@@ -44,8 +44,14 @@ export default function AssessPage() {
         signalId: signalId.trim(),
         contractAddress: address.trim() as `0x${string}`,
       });
-      setRecord(typeof result.verdict === "string" ? result.verdict : JSON.stringify(result.verdict, null, 2));
-      setMessage(`Verdict accepted: ${result.verdictId}`);
+      setRecord(JSON.stringify({
+        verdictId: result.verdictId,
+        transactionHash: result.hash,
+        readbackWarning: result.readbackWarning,
+        verdict: result.verdict,
+        receipt: result.receipt,
+      }, null, 2));
+      setMessage(result.readbackWarning ? `Verdict accepted: ${result.verdictId}. Readback is still catching up.` : `Verdict accepted: ${result.verdictId}`);
     } catch (error) {
       setMessage(formatUiError(error));
     } finally {
