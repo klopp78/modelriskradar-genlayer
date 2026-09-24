@@ -83,6 +83,7 @@ export default function CasePage() {
           <button className="action-button" onClick={() => connectWallet().then(() => setMessage("Wallet connected.")).catch((error) => setMessage(formatUiError(error)))}>Connect wallet</button>
           <button className="action-button primary" disabled={busy} onClick={submit}>{busy ? "Awaiting consensus" : "Register signal"}</button>
         </div>
+        <p className="text-xs text-[#6f7b67]">Uses standard wallet signing only. No MetaMask Snap is required; switch the wallet to Studionet before writing.</p>
         <p className="text-sm text-[#596452]">{message}</p>
       </section>
       {record ? <pre className="result-card mt-6 overflow-x-auto text-sm">{record}</pre> : null}

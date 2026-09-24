@@ -30,6 +30,9 @@ function renderUnknown(value: unknown): string {
 }
 
 function friendlyMessage(message: string): string {
+  if (message.includes("wallet_getSnaps")) {
+    return "This app does not require MetaMask Snaps. Your wallet rejected a Snap capability check; refresh the page, connect with a standard EIP-1193 wallet, and switch to Studionet before submitting.";
+  }
   if (message.includes("signal_already_registered")) {
     return "This exact signal was already registered. Change the review run reference or claim text, then register again.";
   }
